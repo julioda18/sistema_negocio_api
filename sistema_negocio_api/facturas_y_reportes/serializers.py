@@ -8,14 +8,14 @@ from productos.serializers import ProductoSerializer
 class FacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Factura
-        fields = ("nombre", "fecha", "total", "cliente")
+        fields = ("nombre", "fecha", "total", "cliente", "metodo_pago")
     
     cliente = ClienteSerializer(read_only=True)
 
 class DetalleFacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleFactura
-        fields = ("nombre", "descripcion", "cantidad", "subtotal", "cantidad", "factura", "producto")
+        fields = ("nombre", "precio_producto", "cantidad", "subtotal", "factura", "producto")
     
     factura = FacturaSerializer(read_only=True)
     producto = ProductoSerializer(read_only=True)
