@@ -12,3 +12,9 @@ class Producto(models.Model):
     cantidad_en_stock = models.IntegerField()
     numero_serial = models.CharField(max_length=30, blank=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
+
+"""
+class Item(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    numero_serial = models.CharField(max_length=30)
+"""

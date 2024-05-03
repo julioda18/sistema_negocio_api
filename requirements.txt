@@ -6,3 +6,4 @@ psycopg2-binary===2.9.9
 django-filter===24.2
 markdown===3.6
 django-cors-headers===4.3.1
+django-crontab===0.7.1
