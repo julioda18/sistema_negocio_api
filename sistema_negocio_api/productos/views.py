@@ -3,9 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.core.exceptions import ValidationError
+from django.db import transaction
 
-from .models import Categoria, Producto
-from .serializers import CategoriaSerializer, ProductoSerializer
+
+from .models import Categoria, Producto, Item
+from .serializers import CategoriaSerializer, ProductoSerializer, ItemSerializer
 
 """
 Para autenticar:
@@ -89,20 +92,45 @@ class VerProducto(APIView):
         try:    
             producto = Producto.objects.get(id=id)
             serializer = ProductoSerializer(producto, many = False)
-            return Response({"producto": serializer.data}, status = status.HTTP_200_OK)
+            producto_data = serializer.data
+            todos_seriales =  Item.objects.first()
+            seriales = Item.objects.filter(producto=producto)
+            seriales_data = [ItemSerializer(serial).data for serial in seriales]
+            if len(seriales_data) == 1:
+                producto_data["serial"]= seriales_data[0]
+            elif not seriales or len(seriales_data) == 0:
+                producto_data["serial"]= "no hay ningun serial todavia"
+            else:
+                producto_data["seriales"]= seriales_data
+
+            return Response({"producto": producto_data}, status = status.HTTP_200_OK)
         except Exception as e:
-            return Response({"mensaje_de_error": "No existe el cliente o no ha podido ser encontrado", "excepcion": str(e)},  status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"mensaje_de_error": "No existe el producto o no ha podido ser encontrado", "excepcion": str(e)},  status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CrearProducto(APIView):
+    @transaction.atomic
     def post(self, request):
         try: 
             data=request.data
+            seriales_data = request.data.get("seriales", [])
             serializer = ProductoSerializer(data=data)
             if serializer.is_valid():
-                serializer.save(categoria = Categoria.objects.get(id=data["categoria"]))
-                return Response({"nuevo_producto": serializer.data}, status= status.HTTP_201_CREATED)
+                productos = Producto(**serializer.validated_data, categoria  = Categoria.objects.get(id=data["categoria"]))
+                productos.save()
             else: 
-                return Response({"mensaje_de_error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError(serializer.errors)
+            seriales = []
+            for serial_data in seriales_data:
+                seriales_serializer = ItemSerializer(data=serial_data)
+                if seriales_serializer.is_valid():
+                    serial = Item(**seriales_serializer.validated_data, producto=productos)
+                    serial.save()
+                    seriales.append(serial)
+                else: 
+                    raise ValidationError(seriales_serializer.errors)
+            return Response({"nuevo_producto": ProductoSerializer(productos).data, 
+                             "seriales": [ItemSerializer(serial).data for serial in seriales],
+                             }, status= status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"mensaje_de_error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         

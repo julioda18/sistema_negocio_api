@@ -7,7 +7,7 @@ Examples:
 Function views
     1. Add an import:  from my_app import views
     2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
+Class_based views
     1. Add an import:  from other_app.views import Home
     2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
 Including another URLconf
@@ -47,19 +47,19 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/clientes/', VerClientes.as_view(), name='clientes'),
-    path('api/cliente/<int:id>/', VerCliente.as_view(), name='cliente-detail'),
-    path('api/crear-cliente/', CrearCliente.as_view(), name='crear-cliente'),
-    path('api/editar-cliente/<int:id>/', EditarCliente.as_view(), name='editar-cliente'),
-    path('api/borrar-cliente/<int:id>/', BorrarCliente.as_view(), name='borrar-cliente'),
+    path('api/cliente/<int:id>/', VerCliente.as_view(), name='cliente_detail'),
+    path('api/crear_cliente/', CrearCliente.as_view(), name='crear_cliente'),
+    path('api/editar_cliente/<int:id>/', EditarCliente.as_view(), name='editar_cliente'),
+    path('api/borrar_cliente/<int:id>/', BorrarCliente.as_view(), name='borrar_cliente'),
     path('api/categorias/', VerCategorias.as_view(), name='categorias'),
-    path('api/categoria/<int:id>/', VerCategoria.as_view(), name='categoria-detail'),
-    path('api/crear-categoria/', CrearCategoria.as_view(), name='crear-categoria'),
-    path('api/editar-categoria/<int:id>/', EditarCategoria.as_view(), name='editar-categoria'),
-    path('api/borrar-categoria/<int:id>/', BorrarCategoria.as_view(), name='borrar-categoria'),
+    path('api/categoria/<int:id>/', VerCategoria.as_view(), name='categoria_detail'),
+    path('api/crear_categoria/', CrearCategoria.as_view(), name='crear_categoria'),
+    path('api/editar_categoria/<int:id>/', EditarCategoria.as_view(), name='editar_categoria'),
+    path('api/borrar_categoria/<int:id>/', BorrarCategoria.as_view(), name='borrar_categoria'),
     path('api/productos/', VerProductos.as_view(), name='productos'),
-    path('api/producto/<int:id>/', VerProducto.as_view(), name='producto-detail'),
-    path('api/crear-producto/', CrearProducto.as_view(), name='crear-producto'),
-    path('api/editar-producto/<int:id>/', EditarProducto.as_view(), name='editar-producto'),
-    path('api/borrar-producto/<int:id>/', BorrarProducto.as_view(), name='borrar-producto'),
+    path('api/producto/<int:id>/', VerProducto.as_view(), name='producto_detail'),
+    path('api/crear_producto/', CrearProducto.as_view(), name='crear_producto'),
+    path('api/editar_producto/<int:id>/', EditarProducto.as_view(), name='editar_producto'),
+    path('api/borrar_producto/<int:id>/', BorrarProducto.as_view(), name='borrar_producto'),
     
 ]
