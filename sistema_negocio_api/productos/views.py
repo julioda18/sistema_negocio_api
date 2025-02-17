@@ -5,8 +5,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.core.exceptions import ValidationError
 from django.db import transaction
-
-
 from .models import Categoria, Producto, Item
 from .serializers import CategoriaSerializer, ProductoSerializer, ItemSerializer
 
@@ -32,14 +30,15 @@ class VerCategoria(APIView):
             serializer = CategoriaSerializer(categoria, many = False)
             productos = Producto.objects.filter(categoria=categoria)
             categoria_data = serializer.data
-            productos_data = [ProductoSerializer(producto).data for producto in productos]
-            if len(productos_data) == 1:
-                categoria_data["producto"]= productos_data[0]
-            elif not productos or len(productos_data) == 0: 
-                categoria_data["producto"]= "no hay ningun producto todavia"
+            productos_data = ProductoSerializer(productos, many=True).data
+            
+            if not productos or len(productos_data) == 0: 
+                categoria_data["productos"]= "no hay ningun producto todavia"
             else:
                 categoria_data["productos"]= productos_data
             return Response({"categoria": categoria_data}, status = status.HTTP_200_OK)
+        except Categoria.DoesNotExist:
+            return Response({"mensaje_de_error": "El producto no existe"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"mensaje_de_error": "No existe la categoria o no ha podido ser encontrada", "excepcion": str(e)},  status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -77,7 +76,6 @@ class BorrarCategoria(APIView):
         except Exception as e:
             return Response({"mensaje_de_error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class VerProductos(APIView):
     def get(self, request):
         try: 
@@ -89,23 +87,23 @@ class VerProductos(APIView):
 
 class VerProducto(APIView):
     def get(self, request, id):
-        try:    
+        try:
             producto = Producto.objects.get(id=id)
-            serializer = ProductoSerializer(producto, many = False)
-            producto_data = serializer.data
-            todos_seriales =  Item.objects.first()
+            producto_data = ProductoSerializer(producto).data
             seriales = Item.objects.filter(producto=producto)
-            seriales_data = [ItemSerializer(serial).data for serial in seriales]
-            if len(seriales_data) == 1:
-                producto_data["serial"]= seriales_data[0]
-            elif not seriales or len(seriales_data) == 0:
-                producto_data["serial"]= "no hay ningun serial todavia"
-            else:
-                producto_data["seriales"]= seriales_data
+            seriales_data = ItemSerializer(seriales, many=True).data
 
-            return Response({"producto": producto_data}, status = status.HTTP_200_OK)
+            if seriales_data:
+                producto_data["seriales"] = seriales_data
+            else:
+                producto_data["seriales"] = "No hay ningún serial todavía"
+            return Response({"producto": producto_data}, status=status.HTTP_200_OK)
+
+        except Producto.DoesNotExist:
+            return Response({"mensaje_de_error": "El producto no existe"}, status=status.HTTP_404_NOT_FOUND)
+
         except Exception as e:
-            return Response({"mensaje_de_error": "No existe el producto o no ha podido ser encontrado", "excepcion": str(e)},  status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"mensaje_de_error": "Ha ocurrido un error al procesar la solicitud", "excepcion": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CrearProducto(APIView):
     @transaction.atomic
@@ -128,6 +126,10 @@ class CrearProducto(APIView):
                     seriales.append(serial)
                 else: 
                     raise ValidationError(seriales_serializer.errors)
+            
+            productos.cantidad_en_stock = len(seriales)
+            productos.save()
+
             return Response({"nuevo_producto": ProductoSerializer(productos).data, 
                              "seriales": [ItemSerializer(serial).data for serial in seriales],
                              }, status= status.HTTP_201_CREATED)
@@ -154,5 +156,68 @@ class BorrarProducto(APIView):
             producto = Producto.objects.get(id=id)
             producto.delete()
             return Response({"mensaje": "El producto ha sido borrado correctamente"}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"mensaje_de_error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CrearItem(APIView):
+    def post(self, request):
+        try:
+            data = request.data
+            producto_nombre = data.get("producto")
+            serializer = ItemSerializer(data)
+            if not producto:
+                return Response({"mensaje_de_error": "Se requiere el nombre del producto"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                producto = Producto.objects.get(nombre=producto_nombre)
+            except Producto.DoesNotExist:
+                return Response({"mensaje_de_error": "El producto no existe"}, status=status.HTTP_404_NOT_FOUND)
+
+            if serializer.is_valid():
+                item = Item(**serializer.validated_data, producto=producto)
+                item.save()
+            else: 
+                raise ValidationError(serializer.errors)
+            
+            return Response({"item_creado": ItemSerializer(item).data}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"mensaje_de_error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class EditarItem(APIView):
+    def put(self, request, id):
+        try:
+            data = request.data
+            item = Item.objects.get(id=id)
+            serializer = ItemSerializer(item, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"item_editado": serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({"mensaje_de_error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Item.DoesNotExist:
+            return Response({"mensaje_de_error": "El serial no existe"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"mensaje_de_error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class BorrarItem(APIView):
+    def delete(self, request, id):
+        try:
+            item = Item.objects.get(id=id)
+            producto = item.producto  
+            item.delete()
+            if producto.cantidad_en_stock > 0:
+                producto.cantidad_en_stock -= 1
+                producto.save()
+            else:
+                return Response({"mensaje_de_error": "El stock ya es 0, no se puede reducir más"}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({"mensaje": "El Item ha sido borrado correctamente y el stock se ha reducido"}, status=status.HTTP_204_NO_CONTENT)
+
+        except Item.DoesNotExist:
+            return Response({"mensaje_de_error": "El Item no existe"}, status=status.HTTP_404_NOT_FOUND)
+
+        except Producto.DoesNotExist:
+            return Response({"mensaje_de_error": "El Producto asociado no existe"}, status=status.HTTP_404_NOT_FOUND)
+
         except Exception as e:
             return Response({"mensaje_de_error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

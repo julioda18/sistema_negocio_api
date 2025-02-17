@@ -9,9 +9,8 @@ class Factura(models.Model):
         ("cash", "Efectivo"),
         ("POS", "Punto de Venta"),
         ("dolares", "Dolares"),
-        ("not_available", "N/A"),
+        ("other", "Otro"),
     )
-    nombre= models.CharField(max_length=200)
     fecha = models.DateField(auto_now_add=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     metodo_pago = models.CharField(choices=METODOS_PAGO, max_length=50)

@@ -177,3 +177,7 @@ CORS_ALLOW_METHODS = (
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+CRONJOBS = [
+    ("0 18 * * *", "productos.precio_dolar.actualizar_precios"),
+]
+CRONTAB_COMMAND_SUFFIX = "2>&1"
