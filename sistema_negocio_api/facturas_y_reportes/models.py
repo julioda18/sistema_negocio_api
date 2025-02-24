@@ -6,10 +6,10 @@ from productos.models import Producto
 class Factura(models.Model):
     METODOS_PAGO = (
         ("banco", "Transferencia/Pago Movil"),
-        ("cash", "Efectivo"),
-        ("POS", "Punto de Venta"),
+        ("efectivo", "Efectivo"),
+        ("pos", "Punto de Venta"),
         ("dolares", "Dolares"),
-        ("other", "Otro"),
+        ("otro", "Otro"),
     )
     fecha = models.DateField(auto_now_add=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
@@ -17,9 +17,7 @@ class Factura(models.Model):
     total= models.FloatField()
 
 class DetalleFactura(models.Model):
-    nombre= models.CharField(max_length=200)
-    precio_producto= models.FloatField()
     cantidad = models.IntegerField()
-    subtotal= models.FloatField()
+    subtotal = models.FloatField()
     factura = models.ForeignKey(Factura, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
