@@ -6,15 +6,34 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from .models import Factura, DetalleFactura
-from productos.models import Producto
+from productos.models import Producto, Item
 from clientes.models import Cliente
 from .serializers import FacturaSerializer, DetalleFacturaSerializer
+from decimal import Decimal
 
 class CrearFactura(APIView):
     def calcular_precio_unitario(self, producto, metodo_pago):
         if metodo_pago == "dolares":
-            return producto.precio_dolares / 1.16
-        return producto.precio_bolivares / 1.16
+            return producto.precio_dolares / Decimal(1.16)
+        return producto.precio_bolivares / Decimal(1.16)
+    
+    def dividir_nombre_completo(self, nombre_completo):
+        partes_nombre = nombre_completo.strip().split()
+
+        if len(partes_nombre) == 0:
+            raise ValueError("El nombre no puede estar vacío")
+
+        if len(partes_nombre) == 1:
+            return partes_nombre[0], ""  
+
+        if len(partes_nombre) == 2:
+            return partes_nombre[0], partes_nombre[1]
+
+        if len(partes_nombre) >= 3:
+            nombre = partes_nombre[0]  
+            apellido = " ".join(partes_nombre[1:]) 
+            return nombre, apellido
+    
     @transaction.atomic
     def post(self, request):
         METODOS_PAGO_VALIDOS = ["dolares", "otro", "banco", "pos", "efectivo"]
@@ -35,7 +54,8 @@ class CrearFactura(APIView):
                 return Response({"mensaje_de_error": "Método de pago no válido"}, status=status.HTTP_400_BAD_REQUEST)
             
             try:
-                cliente = Cliente.objects.get(nombre=cliente_nombre)
+                nombre, apellido = self.dividir_nombre_completo(cliente_nombre)
+                cliente = Cliente.objects.get(nombre__iexact=nombre, apellido__iexact=apellido)
             except Cliente.DoesNotExist:
                 return Response({"mensaje_de_error": "El cliente no existe"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -47,8 +67,15 @@ class CrearFactura(APIView):
             try:
                 for producto_data in productos_data:
                     producto_nombre = producto_data.get("nombre")
-                    cantidad = producto_data.get("cantidad", 1)
+                    seriales = producto_data.get("seriales", [])
+                    
                     producto = Producto.objects.get(nombre=producto_nombre)
+                    items = Item.objects.filter(numero_serial__in=seriales, producto=producto)
+                    
+                    if items.count() < len(seriales):
+                        return Response({"mensaje_de_error": f"Algunos seriales no son válidos o no están asociados al producto {producto_nombre}"}, status=status.HTTP_400_BAD_REQUEST)
+
+                    cantidad = len(seriales)
 
                     if producto.cantidad_en_stock < cantidad:
                         return Response({"mensaje_de_error": f"Stock insuficiente para el producto {producto_nombre}"}, status=status.HTTP_400_BAD_REQUEST)
@@ -57,10 +84,11 @@ class CrearFactura(APIView):
                     total_producto = precio_unitario * cantidad
 
                     productos.append({
-                        "nombre": producto.nombre,
+                        "producto": producto.id,
                         "cantidad": cantidad,
                         "precio_unitario" : precio_unitario,
-                        "total_producto": total_producto    
+                        "total_producto": total_producto,
+                        "seriales": seriales
                     })
 
                     subtotal += total_producto
@@ -71,38 +99,59 @@ class CrearFactura(APIView):
 
             except Producto.DoesNotExist:
                 return Response({"mensaje_de_error": "el (o los) producto(s) no existe(n)"}, status=status.HTTP_404_NOT_FOUND)
-    
-            impuesto = subtotal * 0.16
+
+            impuesto = subtotal * Decimal(0.16)
             total = subtotal + impuesto
+            print(total)
             
             factura_data ={
                 "cliente": cliente.id,
                 "metodo_pago": metodo_pago,
-                "total": total
+                "subtotal": round(subtotal, 2),
+                "total": round(total, 2)
             }
+            
             serializer = FacturaSerializer(data=factura_data)
             if serializer.is_valid():
                 factura = serializer.save()
             else: 
                 raise ValidationError(serializer.errors)
             
-            detalle_factura_data = {
+            # Crear un DetalleFactura por cada producto
+            detalles_factura = []
+            for producto_data in productos:
+                detalle_factura_data = {
                     "factura": factura.id,
-                    "subtotal": subtotal,
-                    "cantidad": cantidad_total,
-                    "productos": productos,
+                    "producto": producto_data["producto"],  # ID del producto
+                    "cantidad": producto_data["cantidad"],
+                    "precio_unitario": round(producto_data["precio_unitario"], 2),
+                    "total_producto": round(producto_data["total_producto"], 2),
+                    "seriales": producto_data["seriales"],
                 }
-            detalle_serializer = DetalleFacturaSerializer(data=detalle_factura_data)
 
-            if detalle_serializer.is_valid():
-                detalle_factura = detalle_serializer.save()
-            else:
-                raise ValidationError(detalle_serializer.errors)
+                detalle_serializer = DetalleFacturaSerializer(data=detalle_factura_data)
+                if detalle_serializer.is_valid():
+                    detalle_factura = detalle_serializer.save()
+                    detalles_factura.append(detalle_factura)
+                else:
+                    raise ValidationError(detalle_serializer.errors)
             
+            # Actualizar el stock de los productos
             Producto.objects.bulk_update(productos_a_actualizar, ["cantidad_en_stock"])
+            
+            # Eliminar los ítems asociados a los seriales
+            for producto_data in productos_data:
+                seriales = producto_data.get("seriales", [])
+                items = Item.objects.filter(numero_serial__in=seriales)
+                items.delete()
         
-            return Response({"factura_creada": FacturaSerializer(factura).data,
-                             "detalle_factura": DetalleFacturaSerializer(detalle_factura).data}, status=status.HTTP_201_CREATED)
+            # Serializar los detalles de la factura para la respuesta
+            detalles_factura_serializados = DetalleFacturaSerializer(detalles_factura, many=True).data
+            
+            return Response({
+                "factura_creada": FacturaSerializer(factura).data,
+                "detalles_factura": detalles_factura_serializados
+            }, status=status.HTTP_201_CREATED)
 
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -123,41 +172,36 @@ class VerFactura(APIView):
     def get(self, request, factura_id):
         try:
             factura = Factura.objects.get(id=factura_id)
-            detalle_factura = DetalleFactura.objects.get(factura=factura)
+            detalles_factura = DetalleFactura.objects.filter(factura=factura)  # Usar filter, no get
             
-            productos = detalle_factura.producto.all() 
-            
-            # Construir la lista de productos
             productos_data = []
-            for producto in productos:
+            for detalle in detalles_factura:
+                producto = detalle.producto
+                seriales = detalle.seriales
                 productos_data.append({
                     "nombre": producto.nombre,
-                    "cantidad": producto.cantidad,  # Asume que la cantidad está en el modelo Producto
-                    "precio_unitario": producto.precio_unitario,
-                    "total_producto": producto.cantidad * producto.precio_unitario
+                    "cantidad": detalle.cantidad,  # La cantidad está en DetalleFactura
+                    "precio_unitario": detalle.precio_unitario,  # Calculado
+                    "total_producto": detalle.total_producto,
+                    "seriales": seriales
                 })
-
+            iva = factura.subtotal * Decimal(0.16)
             response_data = {
                 "factura": {
                     "id": factura.id,
-                    "cliente": factura.cliente.nombre,
+                    "cliente": f"{factura.cliente.nombre} {factura.cliente.apellido}",
                     "metodo_pago": factura.metodo_pago,
-                    "total": factura.total, 
+                    "subtotal": factura.subtotal,
+                    "IVA": round(iva, 2),
+                    "total": factura.total,
                     "fecha_creacion": factura.fecha
                 },
-                "detalle_factura": {
-                    "id": detalle_factura.id,
-                    "subtotal": detalle_factura.subtotal,
-                    "cantidad": detalle_factura.cantidad,
-                    "productos": detalle_factura.producto
-                }
+                "detalles_factura": productos_data  # Lista de productos con sus detalles
             }
             
             return Response(response_data, status=status.HTTP_200_OK)
         
         except Factura.DoesNotExist:
             return Response({"mensaje_de_error": "La factura no existe"}, status=status.HTTP_404_NOT_FOUND)
-        except DetalleFactura.DoesNotExist:
-            return Response({"mensaje_de_error": "El detalle de la factura no existe"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"mensaje_de_error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from pyDolarVenezuela.pages import AlCambio
 from pyDolarVenezuela import Monitor
-from tu_app.models import Producto  # Ajusta la importación según tu estructura
+from productos.models import Producto  # Ajusta la importación según tu estructura
 
 class Command(BaseCommand):
     help = 'Actualiza los precios de los productos en bolívares según el precio del dólar.'

@@ -164,7 +164,7 @@ class CrearItem(APIView):
         try:
             data = request.data
             producto_nombre = data.get("producto")
-            serializer = ItemSerializer(data)
+            serializer = ItemSerializer(data=data)
             if not producto_nombre:
                 return Response({"mensaje_de_error": "Se requiere el nombre del producto"}, status=status.HTTP_400_BAD_REQUEST)
             try:
@@ -175,6 +175,8 @@ class CrearItem(APIView):
             if serializer.is_valid():
                 item = Item(**serializer.validated_data, producto=producto)
                 item.save()
+                producto.cantidad_en_stock += 1
+                producto.save()
             else: 
                 raise ValidationError(serializer.errors)
             

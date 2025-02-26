@@ -1,21 +1,27 @@
 from django.db import models
 from rest_framework import serializers
 from .models import Factura, DetalleFactura
-from clientes.serializers import ClienteSerializer
-from productos.serializers import ProductoSerializer
+from clientes.models import Cliente
+from productos.models import Producto
 
 
 class FacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Factura
-        fields = ("nombre", "fecha", "total", "cliente", "metodo_pago")
+        fields = ("id","fecha", "total", "subtotal", "cliente", "metodo_pago")
     
-    cliente = ClienteSerializer(read_only=True)
+    cliente = serializers.SlugRelatedField(
+        slug_field="id", queryset=Cliente.objects.all()
+    )
 
 class DetalleFacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleFactura
-        fields = ("nombre", "precio_producto", "cantidad", "subtotal", "factura", "producto")
+        fields = ("cantidad", "total_producto", "precio_unitario",  "seriales", "factura", "producto")
     
-    factura = FacturaSerializer(read_only=True)
-    producto = ProductoSerializer(read_only=True)
+    factura = serializers.SlugRelatedField(
+        slug_field="id", queryset=Factura.objects.all()
+    )
+    producto = serializers.SlugRelatedField(
+        slug_field="id", queryset=Producto.objects.all()
+    )
