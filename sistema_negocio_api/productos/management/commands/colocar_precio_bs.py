@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from pyDolarVenezuela.pages import AlCambio
 from pyDolarVenezuela import Monitor
 from productos.models import Producto  # Ajusta la importación según tu estructura
+from decimal import Decimal
 
 class Command(BaseCommand):
     help = 'Actualiza los precios de los productos en bolívares según el precio del dólar.'
@@ -32,7 +33,7 @@ class Command(BaseCommand):
             productos = Producto.objects.all()
             for producto in productos:
                 try:
-                    nuevo_precio = producto.precio_dolares * precio_bolivares
+                    nuevo_precio = producto.precio_dolares * Decimal(precio_bolivares)
                     producto.precio_bolivares = nuevo_precio
                     producto.save()
                     self.stdout.write(self.style.SUCCESS(f'Precio actualizado para el producto {producto.id}'))

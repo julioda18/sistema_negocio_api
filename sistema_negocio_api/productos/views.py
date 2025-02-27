@@ -7,12 +7,28 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from .models import Categoria, Producto, Item
 from .serializers import CategoriaSerializer, ProductoSerializer, ItemSerializer
+from pyDolarVenezuela.pages import AlCambio
+from pyDolarVenezuela import Monitor
+from decimal import Decimal
 
 """
 Para autenticar:
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 """
+
+def obtener_precio_dolar():
+    try:
+        monitor = Monitor(AlCambio, 'USD')
+        bcv = monitor.get_value_monitors("bcv")
+        if bcv is None:
+            raise ValueError("No se pudo obtener el valor del dólar desde el monitor.")
+        precio_dolar = bcv.price
+        return precio_dolar
+    except Exception as e:
+        print(f'Error al obtener el precio del dólar: {e}')
+        return None
+
 
 class VerCategorias(APIView):
     def get(self, request):
@@ -111,9 +127,10 @@ class CrearProducto(APIView):
         try: 
             data=request.data
             seriales_data = request.data.get("seriales", [])
+            categoria = Categoria.objects.get(nombre=data["categoria"])
             serializer = ProductoSerializer(data=data)
             if serializer.is_valid():
-                productos = Producto(**serializer.validated_data, categoria  = Categoria.objects.get(id=data["categoria"]))
+                productos = Producto(**serializer.validated_data, categoria  = categoria)
                 productos.save()
             else: 
                 raise ValidationError(serializer.errors)
@@ -128,6 +145,9 @@ class CrearProducto(APIView):
                     raise ValidationError(seriales_serializer.errors)
             
             productos.cantidad_en_stock = len(seriales)
+            precio_dolar = obtener_precio_dolar()
+            if precio_dolar is not None:
+                productos.precio_bolivares = productos.precio_dolares * Decimal(precio_dolar)
             productos.save()
 
             return Response({"nuevo_producto": ProductoSerializer(productos).data, 
@@ -141,9 +161,14 @@ class EditarProducto(APIView):
         try:
             data=request.data
             producto = Producto.objects.get(id=id)
+            categoria = Categoria.objects.get(nombre=data["categoria"])
             serializer = ProductoSerializer(producto, data=data)
             if serializer.is_valid():
-                serializer.save(categoria = Categoria.objects.get(id=data["categoria"]))
+                serializer.save(categoria = categoria)
+                precio_dolar = obtener_precio_dolar()
+                if precio_dolar is not None:
+                    producto.precio_bolivares = producto.precio_dolares * Decimal(precio_dolar)
+                    producto.save()
                 return Response({"producto_editado": serializer.data}, status = status.HTTP_200_OK)
             else: 
                 return Response({"mensaje_de_error": serializer.errors}, status = status.HTTP_400_BAD_REQUEST)
