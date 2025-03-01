@@ -6,35 +6,35 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('facturas_y_reportes', '0006_detallefactura_seriales'),
+        ("facturas_y_reportes", "0006_detallefactura_seriales"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='detallefactura',
-            name='subtotal',
+            model_name="detallefactura",
+            name="subtotal",
         ),
         migrations.AddField(
-            model_name='detallefactura',
-            name='precio_unitario',
+            model_name="detallefactura",
+            name="precio_unitario",
             field=models.DecimalField(decimal_places=2, default=0, max_digits=12),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='detallefactura',
-            name='total_producto',
+            model_name="detallefactura",
+            name="total_producto",
             field=models.DecimalField(decimal_places=2, default=0, max_digits=12),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='factura',
-            name='subtotal',
+            model_name="factura",
+            name="subtotal",
             field=models.DecimalField(decimal_places=2, default=0, max_digits=12),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='factura',
-            name='total',
+            model_name="factura",
+            name="total",
             field=models.DecimalField(decimal_places=2, max_digits=12),
         ),
     ]

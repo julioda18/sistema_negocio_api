@@ -1,7 +1,8 @@
 from django.db import models
 from clientes.models import Cliente
 from productos.models import Producto
-from django.db.models import JSONField 
+from django.db.models import JSONField
+
 
 # Create your models here.
 class Factura(models.Model):
@@ -16,8 +17,9 @@ class Factura(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     metodo_pago = models.CharField(choices=METODOS_PAGO, max_length=50)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
-    total= models.DecimalField(max_digits=12, decimal_places=2)
-    
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+
+
 class DetalleFactura(models.Model):
     cantidad = models.IntegerField()
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)

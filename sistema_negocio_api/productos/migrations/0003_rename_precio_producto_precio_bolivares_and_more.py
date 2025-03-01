@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('productos', '0002_remove_producto_numero_serial_item'),
+        ("productos", "0002_remove_producto_numero_serial_item"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='producto',
-            old_name='precio',
-            new_name='precio_bolivares',
+            model_name="producto",
+            old_name="precio",
+            new_name="precio_bolivares",
         ),
         migrations.AddField(
-            model_name='producto',
-            name='precio_dolares',
+            model_name="producto",
+            name="precio_dolares",
             field=models.FloatField(default=0),
             preserve_default=False,
         ),

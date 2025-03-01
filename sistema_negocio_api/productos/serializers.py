@@ -8,13 +8,20 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = ("nombre", "descripcion")
 
+
 class ProductoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Producto
-        fields = ("nombre", "descripcion", "precio_dolares", "precio_bolivares", "cantidad_en_stock", "categoria")
+        fields = (
+            "nombre",
+            "descripcion",
+            "precio_dolares",
+            "precio_bolivares",
+            "cantidad_en_stock",
+            "categoria",
+        )
 
     categoria = CategoriaSerializer(read_only=True)
-
 
 
 class ItemSerializer(serializers.ModelSerializer):

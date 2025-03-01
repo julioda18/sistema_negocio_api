@@ -2,9 +2,10 @@ from pyDolarVenezuela.pages import AlCambio
 from pyDolarVenezuela import Monitor
 from .models import Producto
 
+
 def obtener_precio_dolar():
     try:
-        monitor = Monitor(AlCambio, 'USD')
+        monitor = Monitor(AlCambio, "USD")
         bcv = monitor.get_value_monitors("bcv")
         if bcv is None:
             raise ValueError("No se pudo obtener el valor del dólar desde el monitor.")
@@ -15,13 +16,16 @@ def obtener_precio_dolar():
         print(f"Error al obtener el precio del dólar: {e}")
         return None  # Retorna None en caso de error
 
+
 def actualizar_precios():
     try:
         productos = Producto.objects.all()
         precio_bolivares = obtener_precio_dolar()
 
         if precio_bolivares is None:
-            raise ValueError("No se pudo obtener el precio del dólar. No se actualizarán los precios.")
+            raise ValueError(
+                "No se pudo obtener el precio del dólar. No se actualizarán los precios."
+            )
 
         for producto in productos:
             try:
@@ -36,6 +40,7 @@ def actualizar_precios():
     except Exception as e:
         # Captura errores generales en la función
         print(f"Error en la función actualizar_precios: {e}")
+
 
 def run():
     print(obtener_precio_dolar())

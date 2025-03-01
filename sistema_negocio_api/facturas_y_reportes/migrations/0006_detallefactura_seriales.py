@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('facturas_y_reportes', '0005_alter_factura_metodo_pago'),
+        ("facturas_y_reportes", "0005_alter_factura_metodo_pago"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='detallefactura',
-            name='seriales',
+            model_name="detallefactura",
+            name="seriales",
             field=models.JSONField(default=list),
         ),
     ]

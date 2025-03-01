@@ -7,20 +7,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('productos', '0001_initial'),
+        ("productos", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='producto',
-            name='numero_serial',
+            model_name="producto",
+            name="numero_serial",
         ),
         migrations.CreateModel(
-            name='Item',
+            name="Item",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('numero_serial', models.CharField(max_length=30)),
-                ('producto', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='productos.producto')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("numero_serial", models.CharField(max_length=30)),
+                (
+                    "producto",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="productos.producto",
+                    ),
+                ),
             ],
         ),
     ]

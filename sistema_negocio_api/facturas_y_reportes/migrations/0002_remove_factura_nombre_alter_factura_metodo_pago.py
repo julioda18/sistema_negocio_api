@@ -6,17 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('facturas_y_reportes', '0001_initial'),
+        ("facturas_y_reportes", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='factura',
-            name='nombre',
+            model_name="factura",
+            name="nombre",
         ),
         migrations.AlterField(
-            model_name='factura',
-            name='metodo_pago',
-            field=models.CharField(choices=[('banco', 'Transferencia/Pago Movil'), ('cash', 'Efectivo'), ('POS', 'Punto de Venta'), ('dolares', 'Dolares'), ('other', 'Otro')], max_length=50),
+            model_name="factura",
+            name="metodo_pago",
+            field=models.CharField(
+                choices=[
+                    ("banco", "Transferencia/Pago Movil"),
+                    ("cash", "Efectivo"),
+                    ("POS", "Punto de Venta"),
+                    ("dolares", "Dolares"),
+                    ("other", "Otro"),
+                ],
+                max_length=50,
+            ),
         ),
     ]

@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('facturas_y_reportes', '0007_remove_detallefactura_subtotal_and_more'),
+        ("facturas_y_reportes", "0007_remove_detallefactura_subtotal_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='factura',
-            name='subtotal',
+            model_name="factura",
+            name="subtotal",
             field=models.DecimalField(decimal_places=2, max_digits=20),
         ),
         migrations.AlterField(
-            model_name='factura',
-            name='total',
+            model_name="factura",
+            name="total",
             field=models.DecimalField(decimal_places=2, max_digits=20),
         ),
     ]

@@ -9,32 +9,78 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('clientes', '0001_initial'),
-        ('productos', '0001_initial'),
+        ("clientes", "0001_initial"),
+        ("productos", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Factura',
+            name="Factura",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=200)),
-                ('fecha', models.DateField(auto_now_add=True)),
-                ('metodo_pago', models.CharField(choices=[('banco', 'Transferencia/Pago Movil'), ('cash', 'Efectivo'), ('POS', 'Punto de Venta'), ('dolares', 'Dolares'), ('not_available', 'N/A')], max_length=50)),
-                ('total', models.FloatField()),
-                ('cliente', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='clientes.cliente')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=200)),
+                ("fecha", models.DateField(auto_now_add=True)),
+                (
+                    "metodo_pago",
+                    models.CharField(
+                        choices=[
+                            ("banco", "Transferencia/Pago Movil"),
+                            ("cash", "Efectivo"),
+                            ("POS", "Punto de Venta"),
+                            ("dolares", "Dolares"),
+                            ("not_available", "N/A"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                ("total", models.FloatField()),
+                (
+                    "cliente",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="clientes.cliente",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='DetalleFactura',
+            name="DetalleFactura",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=200)),
-                ('precio_producto', models.FloatField()),
-                ('cantidad', models.IntegerField()),
-                ('subtotal', models.FloatField()),
-                ('producto', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='productos.producto')),
-                ('factura', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='facturas_y_reportes.factura')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=200)),
+                ("precio_producto", models.FloatField()),
+                ("cantidad", models.IntegerField()),
+                ("subtotal", models.FloatField()),
+                (
+                    "producto",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="productos.producto",
+                    ),
+                ),
+                (
+                    "factura",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="facturas_y_reportes.factura",
+                    ),
+                ),
             ],
         ),
     ]
