@@ -181,3 +181,5 @@ CRONJOBS = [
     ("0 18 * * *", "productos.precio_dolar.actualizar_precios"),
 ]
 CRONTAB_COMMAND_SUFFIX = "2>&1"
+
+DEEPSEEK_API_KEY = str(os.getenv("DEEPSEEK_API_KEY"))
